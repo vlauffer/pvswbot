@@ -6,7 +6,6 @@ from discord.ext import tasks
 import os
 import emoji
 import datetime
-from keep_alive import keep_alive
 
 token =""
 try:
@@ -18,7 +17,7 @@ except:
 else:
   print("TOKEN FOUND IN SECRETS FILE")
   token = TOKEN
-  
+
 time_delta = 10
 
 client = discord.Client()
@@ -109,10 +108,7 @@ async def on_raw_reaction_add(payload):
 @tasks.loop(seconds=time_delta)
 async def looper():
   await get_all_messages()
-  
   print("🥞🥞🥞🥞🥞")
-  
-
  
 client.run(token)
 
