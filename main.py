@@ -22,13 +22,13 @@ time_delta = 10
 
 client = discord.Client()
 
-def insert_messages(message):
+def insert_messages(messages):
   
-  print("Inserting message")
-  # print(message)
-  data = {'messages': message}
+  print("Inserting messages")
+  print(datetime.datetime.now())
+  data = {'messages': messages}
   try:
-    response = requests.post("https://pvswbot-backend.herokuapp.com/insertmessages", timeout=2, json = data)
+    response = requests.post("https://pvswbot-backend.herokuapp.com/insertmessages", timeout=5, json = data)
     print(response)
 
   except requests.exceptions.RequestException as e:
@@ -45,7 +45,7 @@ def text_has_emoji(text):
   return False
 
 async def get_all_messages():
-  print("in get all")
+  # print("in get all")
   messages_to_send =[]
   
   time_to_get_messages = datetime.datetime.now()- datetime.timedelta(seconds=time_delta)
@@ -57,8 +57,8 @@ async def get_all_messages():
     if type(channel).__name__=='TextChannel':
       
       try: 
-        channel_history = await channel.history(limit=20).flatten()
-        # channel_history = await channel.history(limit=None, after=time_to_get_messages).flatten()
+        # channel_history = await channel.history(limit=20).flatten()
+        channel_history = await channel.history(limit=None, after=time_to_get_messages).flatten()
         for message in channel_history:
           if text_has_emoji(message.content):
             message_struct = {
@@ -71,8 +71,8 @@ async def get_all_messages():
             messages_to_send.append(message_struct)
       except:
         continue
-  print(messages_to_send)
-  # insert_messages(messages_to_send)
+  # print(messages_to_send)
+  insert_messages(messages_to_send)
 
 @client.event
 async def on_ready():
