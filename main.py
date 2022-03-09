@@ -8,27 +8,31 @@ import emoji
 import datetime
 
 token =""
+req_url = ""
 try:
   from secrets import TOKEN
 except:
   print("NO SECRETS FILE. ATTEMPTING TO RETRIEVE TOKEN FROM ENV")
   token= os.environ['TOKEN']
+  req_url="https://pvswbot-backend.herokuapp.com/insertmessages"
   
 else:
   print("TOKEN FOUND IN SECRETS FILE")
   token = TOKEN
+  req_url="http://localhost:3000/insertmessages"
 
 time_delta = 10
 
 client = discord.Client()
 
+
 def insert_messages(messages):
   
   print("Inserting messages")
-  print(datetime.datetime.now())
+
   data = {'messages': messages}
   try:
-    response = requests.post("https://pvswbot-backend.herokuapp.com/insertmessages", timeout=5, json = data)
+    response = requests.post(req_url, timeout=5, json = data)
     print(response)
 
   except requests.exceptions.RequestException as e:
@@ -47,8 +51,8 @@ def text_has_emoji(text):
 async def get_all_messages():
   # print("in get all")
   messages_to_send =[]
-  
-  time_to_get_messages = datetime.datetime.now()- datetime.timedelta(seconds=time_delta)
+  time_to_get_messages = datetime.datetime.utcnow()- datetime.timedelta(seconds=time_delta)
+
 
   all_channels_raw = client.get_all_channels()
   all_channels = tuple(all_channels_raw)
@@ -57,7 +61,7 @@ async def get_all_messages():
     if type(channel).__name__=='TextChannel':
       
       try: 
-        # channel_history = await channel.history(limit=20).flatten()
+        # channel_history = await channel.history(limit=5).flatten()
         channel_history = await channel.history(limit=None, after=time_to_get_messages).flatten()
         for message in channel_history:
           if text_has_emoji(message.content):
@@ -89,15 +93,11 @@ async def on_message(message):
 
   if message.content.startswith("🥞"):
     #discord.utils.find() or just use str.find(message.content,"🥞")
-    await message.channel.send("+0 pancake points")
+    await message.channel.send("+2000 pancake points")
     
   if message.content.startswith("🧇"):
     await message.channel.send("+10 waffle points") 
-  # if "new apps" in message.content:
-      #add reaction, this should probably be any of, new app, new app(s), something of the like  (think we need re mod though)
-    
-    #add message that says something about as stack of pancakes/waffles. 
-    #most of this is probably gonna be silent until we see if the actual count works lol.
+
 
 @client.event
 async def on_raw_reaction_add(payload):
@@ -114,3 +114,8 @@ client.run(token)
 
 
 
+  # if "new apps" in message.content:
+      #add reaction, this should probably be any of, new app, new app(s), something of the like  (think we need re mod though)
+    
+    #add message that says something about as stack of pancakes/waffles. 
+    #most of this is probably gonna be silent until we see if the actual count works lol.
