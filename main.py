@@ -28,7 +28,7 @@ client = discord.Client()
 
 def insert_messages(messages):
   
-  print("Inserting messages")
+  print("Inserting pancakes (hopefully)")
 
   data = {'messages': messages}
   try:
@@ -66,7 +66,7 @@ async def get_all_messages():
         for message in channel_history:
           if text_has_emoji(message.content):
             message_struct = {
-              "username": message.author.display_name,
+              "username": message.author.display_name +"#"+ message.author.discriminator,
               "user_id": message.author.id,
               "channel_id": message.channel.id,
               "message_id": message.id,
