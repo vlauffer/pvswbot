@@ -9,6 +9,8 @@ import datetime
 
 token =""
 req_url = ""
+
+# Sets request url and token, which is determined by the existance of the secrets file
 try:
   from secrets import TOKEN
 except:
@@ -21,14 +23,15 @@ else:
   token = TOKEN
   req_url="http://localhost:3000/insertmessages"
 
+#interval in which to get new messages
 time_delta = 10
 
 client = discord.Client()
 
-
+#sends array of message objects to the backend for insertion
 def insert_messages(messages):
   
-  print("Inserting pancakes (hopefully)")
+  print("Inserting pancakes (and other emojis)")
 
   data = {'messages': messages}
   try:
@@ -38,21 +41,24 @@ def insert_messages(messages):
   except requests.exceptions.RequestException as e:
     print (e)
 
-
+# Future functionality: inserting reactions into db
 async def insert_reaction(payload):
   print(payload.emoji)
 
+#checks to see if there is an emoji in a string
 def text_has_emoji(text):
   for character in text:
     if character in emoji.UNICODE_EMOJI['en']:
       return True
   return False
 
+
+#gets all messages within a given time frame (determined by time_delta), 
+# creates object that contains message information, and prompts insert_messages()
 async def get_all_messages():
-  # print("in get all")
+
   messages_to_send =[]
   time_to_get_messages = datetime.datetime.utcnow()- datetime.timedelta(seconds=time_delta)
-
 
   all_channels_raw = client.get_all_channels()
   all_channels = tuple(all_channels_raw)
@@ -75,15 +81,16 @@ async def get_all_messages():
             messages_to_send.append(message_struct)
       except:
         continue
-  # print(messages_to_send)
   insert_messages(messages_to_send)
 
+#Initializes the bot and calls the looper function
 @client.event
 async def on_ready():
   print('We have logged in as {0.user}'.format(client))
   # insert_messages("messages_to_send")
   await looper.start()
-  
+
+#Event that helps us track if the bot is online (will be removed in a production environment)
 @client.event
 async def on_message(message):
   if message.author == client.user:
@@ -98,24 +105,19 @@ async def on_message(message):
   if message.content.startswith("🧇"):
     await message.channel.send("+10 waffle points") 
 
-
+#Testing functionality for reaction adding
 @client.event
 async def on_raw_reaction_add(payload):
   insert_reaction(payload)
   if payload.emoji.name=="🧇":
     print(payload.emoji)
 
+
+#loops a given function, in this case, get_all_messages(), at given interval determined by time_delta in seconds
 @tasks.loop(seconds=time_delta)
 async def looper():
   await get_all_messages()
   print("🥞🥞🥞🥞🥞")
  
+#starts the bot
 client.run(token)
-
-
-
-  # if "new apps" in message.content:
-      #add reaction, this should probably be any of, new app, new app(s), something of the like  (think we need re mod though)
-    
-    #add message that says something about as stack of pancakes/waffles. 
-    #most of this is probably gonna be silent until we see if the actual count works lol.
