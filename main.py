@@ -10,7 +10,7 @@ import datetime
 token =""
 req_url = ""
 
-# Sets request url and token, which is determined by the existance of the secrets file
+# sets request url and token, which is determined by the existance of the secrets file
 try:
   from secrets import TOKEN
 except:
@@ -23,12 +23,12 @@ else:
   token = TOKEN
   req_url="http://localhost:3000/insertmessages"
 
-#interval in which to get new messages
+# interval in which to get new messages
 time_delta = 10
 
 client = discord.Client()
 
-#sends array of message objects to the backend for insertion
+# sends array of message objects to the backend for insertion
 def insert_messages(messages):
   
   print("Inserting pancakes (and other emojis)")
@@ -45,7 +45,7 @@ def insert_messages(messages):
 async def insert_reaction(payload):
   print(payload.emoji)
 
-#checks to see if there is an emoji in a string
+# checks to see if there is an emoji in a string
 def text_has_emoji(text):
   for character in text:
     if character in emoji.UNICODE_EMOJI['en']:
@@ -53,7 +53,7 @@ def text_has_emoji(text):
   return False
 
 
-#gets all messages within a given time frame (determined by time_delta), 
+# gets all messages within a given time frame (determined by time_delta), 
 # creates object that contains message information, and prompts insert_messages()
 async def get_all_messages():
 
@@ -62,10 +62,12 @@ async def get_all_messages():
 
   all_channels_raw = client.get_all_channels()
   all_channels = tuple(all_channels_raw)
-  for channel in all_channels:
 
+  # for every channel in the Discord guild, test to see if the channel is a Text Channel. 
+  # if the channel is a Text Channel, get messages within a given time interval from now, and add them
+  # ti the messages_to_send array
+  for channel in all_channels:
     if type(channel).__name__=='TextChannel':
-      
       try: 
         # channel_history = await channel.history(limit=5).flatten()
         channel_history = await channel.history(limit=None, after=time_to_get_messages).flatten()
@@ -83,14 +85,14 @@ async def get_all_messages():
         continue
   insert_messages(messages_to_send)
 
-#Initializes the bot and calls the looper function
+# initializes the bot and calls the looper function in order to start fetching messages at a given interval
 @client.event
 async def on_ready():
   print('We have logged in as {0.user}'.format(client))
   # insert_messages("messages_to_send")
   await looper.start()
 
-#Event that helps us track if the bot is online (will be removed in a production environment)
+# Event that helps us track if the bot is online (will be removed in a production environment)
 @client.event
 async def on_message(message):
   if message.author == client.user:
@@ -105,7 +107,7 @@ async def on_message(message):
   if message.content.startswith("🧇"):
     await message.channel.send("+10 waffle points") 
 
-#Testing functionality for reaction adding
+# Testing functionality for reaction adding
 @client.event
 async def on_raw_reaction_add(payload):
   insert_reaction(payload)
@@ -113,7 +115,7 @@ async def on_raw_reaction_add(payload):
     print(payload.emoji)
 
 
-#loops a given function, in this case, get_all_messages(), at given interval determined by time_delta in seconds
+# loops a given function, in this case, get_all_messages(), at given interval determined by time_delta (seconds)
 @tasks.loop(seconds=time_delta)
 async def looper():
   await get_all_messages()
