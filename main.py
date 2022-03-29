@@ -8,7 +8,13 @@ import emoji
 import datetime
 
 token =""
-req_url = ""
+prod_url = "https://pvswbot-backend.herokuapp.com"
+local_url = "http://localhost:3000"
+insert_url = "/messages/add"
+edit_url = "/messages/edit"
+add_reaction_url = "/reaction/add"
+remove_reaction_url = "/reaction/remove"
+active_url=""
 
 # sets request url and token, which is determined by the existance of the secrets file
 try:
@@ -16,12 +22,13 @@ try:
 except:
   print("NO SECRETS FILE. ATTEMPTING TO RETRIEVE TOKEN FROM ENV")
   token= os.environ['TOKEN']
-  req_url="https://pvswbot-backend.herokuapp.com/insertmessages"
+  active_url=prod_url
   
 else:
   print("TOKEN FOUND IN SECRETS FILE")
   token = TOKEN
-  req_url="http://localhost:3000/insertmessages"
+  active_url=local_url
+ 
 
 # interval in which to get new messages
 time_delta = 10
@@ -35,15 +42,33 @@ def insert_messages(messages):
 
   data = {'messages': messages}
   try:
-    response = requests.post(req_url, timeout=5, json = data)
+    response = requests.post(active_url+insert_url, timeout=5, json = data)
     print(response)
 
   except requests.exceptions.RequestException as e:
     print (e)
 
 # Future functionality: inserting reactions into db
-async def insert_reaction(payload):
-  print(payload.emoji)
+def insert_reaction(payload):
+  reaction_struct = {
+    # "username": message.author.display_name +"#"+ message.author.discriminator,
+    "user_id": payload.user_id,
+    "channel_id": payload.channel_id,
+    "message_id": payload.message_id,
+    "content": payload.emoji.name,
+    "created_at": datetime.datetime.utcnow().strftime("%Y-%m-%d %H:%M:%S")
+  }
+
+  print("Inserting reactions")
+
+  data = {'reaction': reaction_struct}
+  try:
+    response = requests.post(active_url+ add_reaction_url, timeout=5, json = data)
+    print(response)
+
+  except requests.exceptions.RequestException as e:
+    print (e)
+  print(payload.emoji.name)
 
 # checks to see if there is an emoji in a string
 def text_has_emoji(text):
@@ -79,11 +104,34 @@ async def get_all_messages():
               "channel_id": message.channel.id,
               "message_id": message.id,
               "content": message.content,
+              "created_at": message.created_at.strftime("%Y-%m-%d %H:%M:%S")
             }     
             messages_to_send.append(message_struct)
       except:
         continue
-  insert_messages(messages_to_send)
+  if len(messages_to_send)>0:
+    insert_messages(messages_to_send)
+
+def remove_reaction(payload):
+  reaction_struct = {
+    # "username": message.author.display_name +"#"+ message.author.discriminator,
+    "user_id": payload.user_id,
+    "message_id": payload.message_id,
+    "content": payload.emoji.name
+    
+  }
+
+  print("removing reaction")
+
+  data = {'reaction': reaction_struct}
+  try:
+    response = requests.post(active_url+ remove_reaction_url, timeout=5, json = data)
+    print(response)
+
+  except requests.exceptions.RequestException as e:
+    print (e)
+  print(payload.emoji.name)
+
 
 # initializes the bot and calls the looper function in order to start fetching messages at a given interval
 @client.event
@@ -107,12 +155,41 @@ async def on_message(message):
   if message.content.startswith("🧇"):
     await message.channel.send("+10 waffle points") 
 
+@client.event
+async def on_raw_message_edit(payload):
+  date = datetime.datetime.fromisoformat(payload.data['timestamp']).strftime("%Y-%m-%d %H:%M:%S")
+  message = {
+    "username": payload.data['author']['username'],
+    "user_id": payload.data['author']['id'],
+    "content": payload.data['content'],
+    "channel_id": payload.channel_id,
+    "message_id": payload.message_id,
+    "created_at":  datetime.datetime.fromisoformat(payload.data['timestamp']).strftime("%Y-%m-%d %H:%M:%S")
+  }
+  edit_messages(message)
+  
+
+def edit_messages(message):  
+  print("Editing pancakes (and other emojis)")
+  data = {'message': message}
+  try:
+    response = requests.post(active_url+edit_url, timeout=5, json = data)
+    print(response)
+
+  except requests.exceptions.RequestException as e:
+    print (e)
+
+
 # Testing functionality for reaction adding
 @client.event
 async def on_raw_reaction_add(payload):
   insert_reaction(payload)
-  if payload.emoji.name=="🧇":
-    print(payload.emoji)
+
+@client.event
+async def on_raw_reaction_remove(payload):
+  remove_reaction(payload)
+
+
 
 
 # loops a given function, in this case, get_all_messages(), at given interval determined by time_delta (seconds)
