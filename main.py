@@ -12,6 +12,7 @@ prod_url = "https://pvswbot-backend.herokuapp.com"
 local_url = "http://localhost:3000"
 insert_url = "/messages/add"
 edit_url = "/messages/edit"
+delete_url = "/messages/delete"
 add_reaction_url = "/reaction/add"
 remove_reaction_url = "/reaction/remove"
 active_url=""
@@ -179,6 +180,21 @@ def edit_messages(message):
   except requests.exceptions.RequestException as e:
     print (e)
 
+
+@client.event
+async def on_raw_message_delete(payload):
+  delete_message(payload.message_id)
+
+def delete_message(message):
+  print("delete message %d" % message)
+
+  data = {'message': message}
+  try:
+    response = requests.post(active_url+delete_url, timeout=5, json = data)
+    print(response)
+
+  except requests.exceptions.RequestException as e:
+    print (e)
 
 # Testing functionality for reaction adding
 @client.event
