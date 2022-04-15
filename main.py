@@ -6,7 +6,7 @@ from discord.ext import tasks
 import os
 import emoji
 import datetime
-import regex
+
 
 token =""
 prod_url = "https://pvswbot-backend.herokuapp.com"
