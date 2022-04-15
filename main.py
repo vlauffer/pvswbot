@@ -6,6 +6,7 @@ from discord.ext import tasks
 import os
 import emoji
 import datetime
+import regex
 
 token =""
 prod_url = "https://pvswbot-backend.herokuapp.com"
@@ -71,10 +72,23 @@ def insert_reaction(payload):
     print (e)
   print(payload.emoji.name)
 
+#checks for flag
+def is_flag_emoji(c):
+  return "\U0001F1E6\U0001F1E8" <= c <= "\U0001F1FF\U0001F1FC" or c in ["\U0001F3F4\U000e0067\U000e0062\U000e0065\U000e006e\U000e0067\U000e007f", "\U0001F3F4\U000e0067\U000e0062\U000e0073\U000e0063\U000e0074\U000e007f", "\U0001F3F4\U000e0067\U000e0062\U000e0077\U000e006c\U000e0073\U000e007f"]
+
 # checks to see if there is an emoji in a string
 def text_has_emoji(text):
+  
+
+
+  
+  
+
   for character in text:
-    if character in emoji.UNICODE_EMOJI['en']:
+    flagcheck = is_flag_emoji(character)
+    if character in emoji.UNICODE_EMOJI['en'] or flagcheck:
+      # emojilist = 
+      
       return True
   return False
 
