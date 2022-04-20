@@ -170,6 +170,8 @@ async def on_message(message):
   if message.content.startswith("🧇"):
     await message.channel.send("+10 waffle points") 
 
+
+# Called whenever a message is edited
 @client.event
 async def on_raw_message_edit(payload):
   date = datetime.datetime.fromisoformat(payload.data['timestamp']).strftime("%Y-%m-%d %H:%M:%S")
@@ -183,7 +185,7 @@ async def on_raw_message_edit(payload):
   }
   edit_messages(message)
   
-
+# Sends an edited message to the backend
 def edit_messages(message):  
   print("Editing pancakes (and other emojis)")
   data = {'message': message}
@@ -194,11 +196,12 @@ def edit_messages(message):
   except requests.exceptions.RequestException as e:
     print (e)
 
-
+#called every time a message is deleted
 @client.event
 async def on_raw_message_delete(payload):
   delete_message(payload.message_id)
 
+#sends a message to be deleted to the backend
 def delete_message(message_id):
   print("delete message %d" % message_id)
 
@@ -210,11 +213,12 @@ def delete_message(message_id):
   except requests.exceptions.RequestException as e:
     print (e)
 
-# Testing functionality for reaction adding
+# Send a reaction to the backend
 @client.event
 async def on_raw_reaction_add(payload):
   insert_reaction(payload)
 
+# Send a reaction to the backend for deletion
 @client.event
 async def on_raw_reaction_remove(payload):
   remove_reaction(payload)
