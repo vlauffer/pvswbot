@@ -199,10 +199,10 @@ def edit_messages(message):
 async def on_raw_message_delete(payload):
   delete_message(payload.message_id)
 
-def delete_message(message):
-  print("delete message %d" % message)
+def delete_message(message_id):
+  print("delete message %d" % message_id)
 
-  data = {'message': message}
+  data = {'message_id': message_id}
   try:
     response = requests.post(active_url+delete_url, timeout=5, json = data)
     print(response)
