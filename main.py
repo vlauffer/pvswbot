@@ -62,16 +62,29 @@ async def get_all_messages():
       try: 
         channel_history = await channel.history(limit=None, after=time_to_get_messages).flatten()
         for message in channel_history:
-          if text_has_emoji(message.content):
-            message_struct = {
-              "username": message.author.display_name +"#"+ message.author.discriminator,
-              "user_id": message.author.id,
-              "channel_id": message.channel.id,
-              "message_id": message.id,
-              "content": message.content,
-              "created_at": message.created_at.strftime("%Y-%m-%d %H:%M:%S")
-            }     
-            messages_to_send.append(message_struct)
+          
+          #get all reactions in the message
+          reactions = []
+          for reaction in message.reactions:
+            reaction_struct = {
+              "user_id": reaction.message.author.id,
+              "channel_id": reaction.message.channel.id,
+              "message_id": reaction.message.id,
+              "content": reaction.emoji,
+              "created_at": reaction.message.created_at.strftime("%Y-%m-%d %H:%M:%S")
+            }
+            reactions.append(reaction_struct)
+
+          message_struct = {
+            "username": message.author.display_name +"#"+ message.author.discriminator,
+            "user_id": message.author.id,
+            "channel_id": message.channel.id,
+            "message_id": message.id,
+            "content": message.content,
+            "reactions": reactions,
+            "created_at": message.created_at.strftime("%Y-%m-%d %H:%M:%S")
+          }     
+          messages_to_send.append(message_struct)
       except:
         continue
   if len(messages_to_send)>0:
