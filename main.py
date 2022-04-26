@@ -1,4 +1,5 @@
 
+from concurrent.futures import thread
 import requests
 import discord
 from discord.ext import tasks
@@ -42,17 +43,27 @@ else:
 time_delta = 10
 
 # creation of the discord client
-client = discord.Client()
+client = discord.Client(intents=discord.Intents.default())
 
 # gets all messages within a given time frame (determined by time_delta), 
 # creates object that contains message information, and prompts send_inserted_messages()
 async def get_all_messages():
 
   messages_to_send =[]
-  time_to_get_messages = datetime.datetime.utcnow()- datetime.timedelta(seconds=time_delta)
+  time_to_get_messages = datetime.datetime.utcnow()- datetime.timedelta(seconds=10) -  datetime.timedelta(hours=4)
 
   all_channels_raw = client.get_all_channels()
   all_channels = tuple(all_channels_raw)
+
+  guild = client.guilds[0]
+  threads = guild.threads
+
+  for thread in threads:
+    try: 
+      thread_messages = await get_thread_messages(thread, time_to_get_messages)
+      messages_to_send += thread_messages
+    except:
+      continue
 
   # for every channel in the Discord guild, test to see if the channel is a Text Channel. 
   # if the channel is a Text Channel, get messages within a given time interval from now, and add them
@@ -60,35 +71,78 @@ async def get_all_messages():
   for channel in all_channels:
     if type(channel).__name__=='TextChannel':
       try: 
-        channel_history = await channel.history(limit=None, after=time_to_get_messages).flatten()
-        for message in channel_history:
-          
-          #get all reactions in the message
-          reactions = []
-          for reaction in message.reactions:
-            reaction_struct = {
-              "user_id": reaction.message.author.id,
-              "channel_id": reaction.message.channel.id,
-              "message_id": reaction.message.id,
-              "content": reaction.emoji,
-              "created_at": reaction.message.created_at.strftime("%Y-%m-%d %H:%M:%S")
-            }
-            reactions.append(reaction_struct)
-
-          message_struct = {
-            "username": message.author.display_name +"#"+ message.author.discriminator,
-            "user_id": message.author.id,
-            "channel_id": message.channel.id,
-            "message_id": message.id,
-            "content": message.content,
-            "reactions": reactions,
-            "created_at": message.created_at.strftime("%Y-%m-%d %H:%M:%S")
-          }     
-          messages_to_send.append(message_struct)
+        channel_messages = await get_channel_messages(channel, time_to_get_messages)
+        messages_to_send += channel_messages
       except:
         continue
+
   if len(messages_to_send)>0:
     send_inserted_messages(messages_to_send)
+
+async def get_channel_messages(channel, time_to_get_messages):
+  messages_to_send = []
+  async for message in channel.history(limit=500, after=time_to_get_messages):
+          
+    #get all reactions in the message
+    reactions = []
+    for reaction in message.reactions:
+      reaction_struct = {
+        "user_id": reaction.message.author.id,
+        "channel_id": reaction.message.channel.id,
+        "message_id": reaction.message.id,
+        "content": reaction.emoji,
+        "created_at": reaction.message.created_at.strftime("%Y-%m-%d %H:%M:%S")
+      }
+      reactions.append(reaction_struct)
+
+    message_struct = {
+      "username": message.author.display_name +"#"+ message.author.discriminator,
+      "user_id": message.author.id,
+      "channel_id": message.channel.id,
+      "message_id": message.id,
+      "content": message.content,
+      "reactions": reactions,
+      "created_at": message.created_at.strftime("%Y-%m-%d %H:%M:%S")
+    }     
+    messages_to_send.append(message_struct)
+  
+  return messages_to_send
+
+async def get_thread_messages(thread, time_to_get_messages):
+  messages_to_send = []
+  print(time_to_get_messages)
+  new_messages = [message async for message in thread.history(limit=100)]
+  async for message in thread.history(limit=None, after=time_to_get_messages):
+
+    #get all reactions in the message
+    reactions = []
+    print(message.content)
+    for reaction in message.reactions:
+      reaction_struct = {
+        "user_id": reaction.message.author.id,
+        "channel_id": reaction.message.channel.id,
+        "message_id": reaction.message.id,
+        "content": reaction.emoji,
+        "created_at": reaction.message.created_at.strftime("%Y-%m-%d %H:%M:%S")
+      }
+      reactions.append(reaction_struct)
+    
+    # message_info = await thread.fetch_message(message.id)
+
+    message_struct = {
+      "username": message.author.display_name +"#"+ message.author.discriminator,
+      "user_id": message.author.id,
+      "channel_id": message.channel.id,
+      "message_id": message.id,
+      "content": message.content,
+      "reactions": reactions,
+      "created_at": message.created_at.strftime("%Y-%m-%d %H:%M:%S")
+    }     
+    messages_to_send.append(message_struct)
+
+  return messages_to_send
+
+
 
 # sends array of message objects to the backend for insertion
 def send_inserted_messages(messages):

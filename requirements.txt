@@ -6,4 +6,4 @@ protobuf==3.19.4
 requests==2.27.1
 six==1.16.0
 urllib3==1.26.8
-discord-py==1.7.3  
+git+https://github.com/rapptz/discord.py 
