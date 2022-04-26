@@ -116,7 +116,6 @@ async def get_thread_messages(thread, time_to_get_messages):
 
     #get all reactions in the message
     reactions = []
-    print(message.content)
     for reaction in message.reactions:
       reaction_struct = {
         "user_id": reaction.message.author.id,
