@@ -50,14 +50,19 @@ client = discord.Client(intents=discord.Intents.default())
 async def get_all_messages():
 
   messages_to_send =[]
+
+  # the time that is used to fetch messages. Messages will be fetched if they are sent after this time.
   time_to_get_messages = datetime.datetime.utcnow()- datetime.timedelta(seconds=10) -  datetime.timedelta(hours=4)
 
+  # get all channels
   all_channels_raw = client.get_all_channels()
   all_channels = tuple(all_channels_raw)
 
+  # get all guilds
   guild = client.guilds[0]
   threads = guild.threads
 
+  #for each thread, get all messages with their reactions and add them to messages_to_send
   for thread in threads:
     try: 
       thread_messages = await get_thread_messages(thread, time_to_get_messages)
@@ -76,11 +81,16 @@ async def get_all_messages():
       except:
         continue
 
+  # if there are any messages, send them to the backend
   if len(messages_to_send)>0:
     send_inserted_messages(messages_to_send)
 
+
+#extract all channel messages and their reactions from a channel, return them in an array
 async def get_channel_messages(channel, time_to_get_messages):
   messages_to_send = []
+  
+  # iterate through all messages, which are fetched after the time in time_to_get_messages
   async for message in channel.history(limit=500, after=time_to_get_messages):
           
     #get all reactions in the message
@@ -94,7 +104,7 @@ async def get_channel_messages(channel, time_to_get_messages):
         "created_at": reaction.message.created_at.strftime("%Y-%m-%d %H:%M:%S")
       }
       reactions.append(reaction_struct)
-
+    #create message structure
     message_struct = {
       "username": message.author.display_name +"#"+ message.author.discriminator,
       "user_id": message.author.id,
@@ -108,6 +118,7 @@ async def get_channel_messages(channel, time_to_get_messages):
   
   return messages_to_send
 
+#extract all messages and reactions from threads, return them in an array
 async def get_thread_messages(thread, time_to_get_messages):
   messages_to_send = []
   print(time_to_get_messages)
@@ -125,8 +136,6 @@ async def get_thread_messages(thread, time_to_get_messages):
         "created_at": reaction.message.created_at.strftime("%Y-%m-%d %H:%M:%S")
       }
       reactions.append(reaction_struct)
-    
-    # message_info = await thread.fetch_message(message.id)
 
     message_struct = {
       "username": message.author.display_name +"#"+ message.author.discriminator,
@@ -198,7 +207,7 @@ def send_deleted_message(message_id):
 async def on_raw_reaction_add(payload):
   send_added_reaction(payload)
 
-# future functionality: inserting reactions into db
+# sends reactions into db
 def send_added_reaction(payload):
   reaction_struct = {
     "user_id": payload.user_id,
@@ -253,6 +262,7 @@ def text_has_emoji(text):
       return True
   return False
 
+#spam a channel with messages
 async def spam(all_channels ):
   counter = 0
   for channel in all_channels:
@@ -276,17 +286,16 @@ async def on_message(message):
   if message.author == client.user:
     return
 
-  if message.content.startswith("$b"):
-    #discord.utils.find() or just use str.find(message.content,"🥞")
+  if message.content.startswith("$p"):
     varia = message.guild
     await spam(varia.channels)
 
-  if message.content.startswith("🥞"):
+  if message.content.startswith("$🥞"):
     #discord.utils.find() or just use str.find(message.content,"🥞")
-    await message.channel.send("+10 pancake points")
+    await message.author.send("PANCAKE GANG!!!")
     
-  if message.content.startswith("🧇"):
-    await message.channel.send("+10 waffle points") 
+  if message.content.startswith("$🧇"):
+    await message.author.send("WAFFLE GANG!!!") 
 
 
 # initializes the bot and calls the looper function in order to start fetching messages at a given interval
