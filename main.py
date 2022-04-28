@@ -2,7 +2,7 @@
 from concurrent.futures import thread
 import requests
 import discord
-from discord.ext import tasks
+from discord.ext import tasks, commands
 import os
 import emoji
 import datetime
@@ -43,7 +43,8 @@ else:
 time_delta = 10
 
 # creation of the discord client
-client = discord.Client(intents=discord.Intents.default())
+client = discord.Client(intents=discord.Intents.all())
+
 
 # gets all messages within a given time frame (determined by time_delta), 
 # creates object that contains message information, and prompts send_inserted_messages()
@@ -262,33 +263,12 @@ def text_has_emoji(text):
       return True
   return False
 
-#spam a channel with messages
-async def spam(all_channels ):
-  counter = 0
-  for channel in all_channels:
-    if type(channel).__name__=='TextChannel':
-      try: 
-        counter = counter+1
-        await channel.send(lorem[counter%5])
-        await channel.send(lorem[counter%5])
-        await channel.send(lorem[counter%5])
-        await channel.send(lorem[counter%5])
-        await channel.send(lorem[counter%5])
-        await channel.send(lorem[counter%5])
-
-      except:
-        continue
-  return
 
 # Event that helps us track if the bot is online (will be removed in a production environment)
 @client.event
 async def on_message(message):
   if message.author == client.user:
     return
-
-  if message.content.startswith("$p"):
-    varia = message.guild
-    await spam(varia.channels)
 
   if message.content.startswith("$🥞"):
     #discord.utils.find() or just use str.find(message.content,"🥞")
@@ -304,11 +284,14 @@ async def on_ready():
   print('We have logged in as {0.user}'.format(client))
   await looper.start()
 
+
+
 # loops the get_all_messages() function at given interval determined by time_delta (seconds)
 @tasks.loop(seconds=time_delta)
 async def looper():
   await get_all_messages()
   print("🥞🥞🥞🥞🥞")
  
+
 #starts the bot
 client.run(token)
