@@ -45,14 +45,13 @@ time_delta = 10
 # creation of the discord client
 client = discord.Client(intents=discord.Intents.all())
 
-
 # gets all messages within a given time frame (determined by time_delta), 
 # creates object that contains message information, and prompts send_inserted_messages()
 async def get_all_messages():
 
   messages_to_send =[]
 
-  # the time that is used to fetch messages. Messages will be fetched if they are sent after this time.
+  #  messages will be fetched if they are sent after time_to_get_messages.
   time_to_get_messages = datetime.datetime.utcnow()- datetime.timedelta(seconds=10) -  datetime.timedelta(hours=4)
 
   # get all channels
@@ -87,7 +86,7 @@ async def get_all_messages():
     send_inserted_messages(messages_to_send)
 
 
-#extract all channel messages and their reactions from a channel, return them in an array
+# extract all channel messages sent after a given time, as well as each messages reactions, and return them in an array
 async def get_channel_messages(channel, time_to_get_messages):
   messages_to_send = []
   
@@ -119,7 +118,7 @@ async def get_channel_messages(channel, time_to_get_messages):
   
   return messages_to_send
 
-#extract all messages and reactions from threads, return them in an array
+#extract all messages and reactions from threads sent after a given time, and return them in an array
 async def get_thread_messages(thread, time_to_get_messages):
   messages_to_send = []
   print(time_to_get_messages)
@@ -152,7 +151,6 @@ async def get_thread_messages(thread, time_to_get_messages):
   return messages_to_send
 
 
-
 # sends array of message objects to the backend for insertion
 def send_inserted_messages(messages):
   
@@ -164,7 +162,7 @@ def send_inserted_messages(messages):
   except requests.exceptions.RequestException as e:
     print (e)
 
-# Called whenever a message is edited. creates message object and invokes send_edited_message to send message to the backend
+# called whenever a message is edited. creates message object and invokes send_edited_message to send message to the backend
 @client.event
 async def on_raw_message_edit(payload):
   message = {
@@ -177,7 +175,7 @@ async def on_raw_message_edit(payload):
   }
   send_edited_message(message)
   
-# Sends an edited message to the backend
+# sends an edited message to the backend
 def send_edited_message(message):  
   data = {'message': message}
   try:
@@ -187,7 +185,7 @@ def send_edited_message(message):
   except requests.exceptions.RequestException as e:
     print (e)
 
-#called every time a message is deleted, and invokes send_deleted_message
+# called every time a message is deleted, and invokes send_deleted_message
 @client.event
 async def on_raw_message_delete(payload):
   send_deleted_message(payload.message_id)
@@ -202,8 +200,7 @@ def send_deleted_message(message_id):
   except requests.exceptions.RequestException as e:
     print (e)
 
-# called whenever a reaction is added, regardless of its cached value.
-# invokes Send a reaction to the backend
+# called whenever a reaction is added, regardless of its cached value, send it along to send_added_reaction()
 @client.event
 async def on_raw_reaction_add(payload):
   send_added_reaction(payload)
@@ -264,14 +261,14 @@ def text_has_emoji(text):
   return False
 
 
-# Event that helps us track if the bot is online (will be removed in a production environment)
+# Event that helps us track if the bot is online 
 @client.event
 async def on_message(message):
   if message.author == client.user:
     return
 
+  # whenever there is a message that starts with $🥞 or $🧇, send author a message
   if message.content.startswith("$🥞"):
-    #discord.utils.find() or just use str.find(message.content,"🥞")
     await message.author.send("PANCAKE GANG!!!")
     
   if message.content.startswith("$🧇"):
@@ -283,8 +280,6 @@ async def on_message(message):
 async def on_ready():
   print('We have logged in as {0.user}'.format(client))
   await looper.start()
-
-
 
 # loops the get_all_messages() function at given interval determined by time_delta (seconds)
 @tasks.loop(seconds=time_delta)
